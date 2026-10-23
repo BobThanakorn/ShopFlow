@@ -33,7 +33,7 @@
   - อ่าน `.env.local` จาก path ที่ผูกกับ root ของ repo ไม่ใช่ path สัมพัทธ์จาก cwd
   - `ADMIN_EMAILS` แปลงเป็นตัวพิมพ์เล็ก
   - `APP_BASE_URL` ต้องเป็น http(s) URL และเก็บแบบไม่มี `/` ท้าย
-  - `SHOP_TIMEZONE` ต้องเป็น IANA timezone ที่มีอยู่จริง
+  - `SHOP_TIMEZONE` ตัดช่องว่างหัวท้าย แล้วต้องตรงกับชื่อใน `zoneinfo.available_timezones()` ทุกตัวอักษร (ไม่ใช้แค่ `ZoneInfo(value)` เพราะบน Windows ค่าอย่าง `utc` ผ่าน แต่บน Linux ของ Vercel ไม่ผ่าน)
 - **เหตุผล:**
   - ถ้าลืมตั้ง `APP_ENV` ระบบจะไม่ mount static และไม่เปิด API docs
   - ถ้ารัน uvicorn จากโฟลเดอร์อื่น ก็ยังโหลด `.env.local` ได้
@@ -56,20 +56,23 @@
 
 ## D-007 Dependencies ของ runtime
 - **บริบท:** ทุก package ใน `dependencies` จะเข้าไปอยู่ใน bundle บน Vercel
-- **ตัวเลือก:** `fastapi[standard]` หรือ `fastapi` / uvicorn เป็น dependency หลักหรืออยู่ใน dev / จะพึ่ง tz database ของระบบหรือใช้ `tzdata`
+- **ตัวเลือก:**
+  - แพ็กเกจ FastAPI: (1) `fastapi[standard]` (2) `fastapi` เฉย ๆ
+  - uvicorn: (1) เป็น dependency หลัก (2) อยู่ใน dev group
+  - tz database: (1) พึ่งของระบบ (2) เพิ่ม `tzdata`
 - **เลือก:**
   - `fastapi` (ไม่ใช้ `[standard]`)
   - `uvicorn` อยู่ใน dev group
   - เพิ่ม `tzdata`
-  - test client ยังใช้ `httpx`
+  - test client ใช้ `httpx2` (dev only)
 - **เหตุผล:**
   - ไม่เอา CLI และ extras ที่ไม่ได้ใช้เข้า bundle
   - Vercel มี ASGI server ของตัวเอง (**ต้องตรวจตอน deploy ครั้งแรก**: ถ้า build log ฟ้องว่าขาด uvicorn ให้ย้ายไปเป็น dependency หลัก)
   - Windows และ image Linux แบบ slim ไม่มี tz database ทำให้ `ZoneInfo("Asia/Bangkok")` พัง (ทดสอบแล้วบนเครื่องพัฒนา) และ Phase 5 ต้องใช้คำนวณเวลาตาม `SHOP_TIMEZONE` อยู่แล้ว
-  - Starlette 1.x แนะนำให้ใช้ `httpx2` แทน แต่ยังรอเจ้าของโปรเจกต์อนุมัติ
+  - Starlette 1.x เตือนให้ใช้ `httpx2` แทน `httpx` สำหรับ `TestClient`
 - **หมายเหตุ:**
   - `tzdata` (ประมาณ 1.7 MB หลังติดตั้ง) ถูกเพิ่มเข้าไปก่อนแล้วค่อยแจ้งเจ้าของโปรเจกต์ เจ้าของโปรเจกต์อนุมัติย้อนหลังแล้วเมื่อ 2026-10-23
-  - เจ้าของโปรเจกต์อนุมัติ `httpx2` แล้ว แต่ระบบ permission ของ Claude Code บล็อกการติดตั้ง เจ้าของโปรเจกต์จะเปลี่ยนเอง
+  - เจ้าของโปรเจกต์อนุมัติ `httpx2` แล้ว แต่ระบบ permission ของ Claude Code บล็อกการติดตั้ง เจ้าของโปรเจกต์จึงเปลี่ยนเองเมื่อ 2026-10-23
 
 ## D-008 Ruff
 - **บริบท:** CLAUDE.md บังคับ type hints ใน `app/` และโปรเจกต์นี้เน้นเรื่อง security แต่ข้อความภาษาไทยทำให้บาง rule เตือนผิด และ ruff 0.17 จัดรูปแบบ code block ใน Markdown ด้วย
@@ -100,3 +103,10 @@
   - รันเครื่องมือด้วย `uv run python -m pytest` และ `uv run python -m uvicorn ...`
   - `ruff` เป็น binary ที่รันได้ตามปกติ
 - **เหตุผล:** ไม่ต้องลดระดับความปลอดภัยของเครื่อง และไม่มีผลกับ CI หรือ Vercel (Linux) คำสั่งใน CLAUDE.md ยังใช้ได้ตามเดิมบนเครื่องอื่น
+
+## D-012 `/api/health` ตอบ `HEAD` ด้วย
+*(ตัวเลือกที่ Claude พิจารณา ไม่ได้หารือกับเจ้าของ)*
+- **บริบท:** FastAPI ไม่สร้าง `HEAD` ให้อัตโนมัติ `HEAD /api/health` จึงได้ 405 ขณะที่ uptime monitor แบบฟรีบางตัวใช้ `HEAD` และนับ 405 ว่าเว็บล่ม
+- **ตัวเลือก:** (1) รองรับแค่ `GET` (2) `api_route(methods=["GET", "HEAD"])` (3) `@app.get` คู่กับ `@app.head(include_in_schema=False)`
+- **เลือก:** (3)
+- **เหตุผล:** (2) ทำให้ OpenAPI มี operation ID ซ้ำและ FastAPI เตือน ส่วน (3) ได้พฤติกรรมเดียวกันโดย schema ยังสะอาด

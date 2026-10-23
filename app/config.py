@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from zoneinfo import available_timezones
 
 from pydantic import AnyHttpUrl, TypeAdapter, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -62,12 +62,12 @@ class Settings(BaseSettings):
     @field_validator("shop_timezone")
     @classmethod
     def _validate_timezone(cls, value: str) -> str:
-        # REVIEW: needs the tzdata package (Windows/slim Linux have no tz database); on Linux
-        # the system database is checked first, so accepted names may differ slightly.
-        try:
-            ZoneInfo(value)
-        except (ZoneInfoNotFoundError, ValueError) as exc:
-            raise ValueError(f"unknown IANA timezone: {value!r}") from exc
+        value = value.strip()
+        # REVIEW: ZoneInfo(value) alone is OS-dependent: Windows' case-insensitive filesystem
+        # loads "utc", which then crashes on Vercel's Linux. An exact match against the
+        # IANA key list behaves the same everywhere (needs tzdata on Windows/slim Linux).
+        if value not in available_timezones():
+            raise ValueError(f"unknown IANA timezone: {value!r}")
         return value
 
     @property
@@ -75,6 +75,8 @@ class Settings(BaseSettings):
         return self.app_env == "development"
 
 
+# REVIEW: cached for the process lifetime, so env changes after the first call are
+# invisible. Tests must call get_settings.cache_clear() (see tests/conftest.py).
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

@@ -5,9 +5,18 @@ import pytest
 
 from app.config import Settings, get_settings
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
 # Captured before isolated_env patches it, so a test can still check the real value.
-CONFIGURED_ENV_FILE = Settings.model_config["env_file"]
+_CONFIGURED_ENV_FILE = Settings.model_config["env_file"]
+
+
+@pytest.fixture(scope="session")
+def repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+@pytest.fixture(scope="session")
+def configured_env_file() -> object:
+    return _CONFIGURED_ENV_FILE
 
 
 @pytest.fixture(autouse=True)
