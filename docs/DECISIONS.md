@@ -56,7 +56,10 @@
 
 ## D-007 Dependencies ของ runtime
 - **บริบท:** ทุก package ใน `dependencies` จะเข้าไปอยู่ใน bundle บน Vercel
-- **ตัวเลือก:** `fastapi[standard]` หรือ `fastapi` / uvicorn เป็น dependency หลักหรืออยู่ใน dev / จะพึ่ง tz database ของระบบหรือใช้ `tzdata`
+- **ตัวเลือก:**
+  - แพ็กเกจ FastAPI: (1) `fastapi[standard]` (2) `fastapi` เฉย ๆ
+  - uvicorn: (1) เป็น dependency หลัก (2) อยู่ใน dev group
+  - tz database: (1) พึ่งของระบบ (2) เพิ่ม `tzdata`
 - **เลือก:**
   - `fastapi` (ไม่ใช้ `[standard]`)
   - `uvicorn` อยู่ใน dev group
