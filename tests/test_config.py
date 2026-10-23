@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.config import ENV_FILE, Settings, get_settings
-from tests.conftest import REPO_ROOT
+from tests.conftest import CONFIGURED_ENV_FILE, REPO_ROOT
 
 
 def test_defaults_fail_safe_to_production() -> None:
@@ -62,7 +62,7 @@ def test_empty_value_falls_back_to_default(monkeypatch: pytest.MonkeyPatch) -> N
 def test_env_local_path_is_anchored_to_repo_root() -> None:
     # A cwd-relative path would silently skip .env.local when uvicorn runs elsewhere.
     assert ENV_FILE == REPO_ROOT / ".env.local"
-    assert ENV_FILE.is_absolute()
+    assert CONFIGURED_ENV_FILE == ENV_FILE
 
 
 def test_reads_env_file(tmp_path: Path) -> None:
