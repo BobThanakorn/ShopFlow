@@ -35,4 +35,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     return app
 
 
+# REVIEW: runs at import time and reads real settings, so importing app.main with a bad
+# env or .env.local raises immediately. Tests import it lazily, after isolated_env.
 app = create_app()

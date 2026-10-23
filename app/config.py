@@ -75,6 +75,8 @@ class Settings(BaseSettings):
         return self.app_env == "development"
 
 
+# REVIEW: cached for the process lifetime, so env changes after the first call are
+# invisible. Tests must call get_settings.cache_clear() (see tests/conftest.py).
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
