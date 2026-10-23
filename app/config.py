@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     @field_validator("app_base_url")
     @classmethod
     def _validate_base_url(cls, value: str) -> str:
+        # REVIEW: only checks http(s) + host; paths, query strings and userinfo still pass.
         _HTTP_URL.validate_python(value)
         # Stored without a trailing slash so f"{base}/api/..." never yields "//".
         return value.rstrip("/")
@@ -61,7 +62,8 @@ class Settings(BaseSettings):
     @field_validator("shop_timezone")
     @classmethod
     def _validate_timezone(cls, value: str) -> str:
-        # Relies on the tzdata package: Windows and slim Linux images ship no tz database.
+        # REVIEW: needs the tzdata package (Windows/slim Linux have no tz database); on Linux
+        # the system database is checked first, so accepted names may differ slightly.
         try:
             ZoneInfo(value)
         except (ZoneInfoNotFoundError, ValueError) as exc:
