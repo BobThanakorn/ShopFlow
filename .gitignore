@@ -22,3 +22,7 @@ htmlcov/
 Thumbs.db
 .idea/
 .vscode/
+
+# AI tooling: third-party skills and machine-specific symlinks; skills-lock.json pins them
+.agents/
+.claude/skills/
