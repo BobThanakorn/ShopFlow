@@ -1,0 +1,55 @@
+[project]
+name = "shopflow"
+version = "0.1.0"
+description = "LINE order intake with AI extraction for a fictional small shop (portfolio project)"
+# REVIEW: pinned to 3.13.* so Vercel cannot pick 3.14 from a ">=" range; keep in sync with .python-version.
+requires-python = "==3.13.*"
+dependencies = [
+    "fastapi>=0.161.1",
+    "pydantic-settings>=2.16.1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "ruff>=0.17.2",
+    "uvicorn>=0.54.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.vercel]
+# Vercel's FastAPI preset routes every request to this app; public/ is served by the CDN.
+entrypoint = "app.main:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+# Ruff also formats code blocks inside Markdown; keep it off the spec/docs and AI tooling.
+extend-exclude = ["docs", ".agents", ".claude"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # isort
+    "UP",      # pyupgrade
+    "B",       # bugbear
+    "SIM",     # simplify
+    "ASYNC",   # async pitfalls
+    "S",       # bandit (security)
+    "ANN",     # type hints required in app/ (CLAUDE.md)
+    "RUF",
+]
+# Thai text in user-facing strings would otherwise trip the "ambiguous unicode" rules.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "ANN"]
