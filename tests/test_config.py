@@ -114,7 +114,17 @@ def test_accepts_valid_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
     assert Settings().shop_timezone == "Asia/Tokyo"
 
 
-@pytest.mark.parametrize("raw", ["Asia/Bangkokk", "GMT+7", "../etc/passwd"])
+def test_timezone_surrounding_whitespace_is_stripped(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SHOP_TIMEZONE", " Asia/Bangkok ")
+
+    assert Settings().shop_timezone == "Asia/Bangkok"
+
+
+# "utc" and "asia/bangkok" load on Windows (case-insensitive filesystem) but not on
+# Vercel's Linux, so they must be rejected everywhere.
+@pytest.mark.parametrize(
+    "raw", ["Asia/Bangkokk", "GMT+7", "../etc/passwd", "utc", "asia/bangkok", "Asia"]
+)
 def test_rejects_unknown_timezone(monkeypatch: pytest.MonkeyPatch, raw: str) -> None:
     monkeypatch.setenv("SHOP_TIMEZONE", raw)
 

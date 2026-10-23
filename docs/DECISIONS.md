@@ -33,7 +33,7 @@
   - อ่าน `.env.local` จาก path ที่ผูกกับ root ของ repo ไม่ใช่ path สัมพัทธ์จาก cwd
   - `ADMIN_EMAILS` แปลงเป็นตัวพิมพ์เล็ก
   - `APP_BASE_URL` ต้องเป็น http(s) URL และเก็บแบบไม่มี `/` ท้าย
-  - `SHOP_TIMEZONE` ต้องเป็น IANA timezone ที่มีอยู่จริง
+  - `SHOP_TIMEZONE` ตัดช่องว่างหัวท้าย แล้วต้องตรงกับชื่อใน `zoneinfo.available_timezones()` ทุกตัวอักษร (ไม่ใช้แค่ `ZoneInfo(value)` เพราะบน Windows ค่าอย่าง `utc` ผ่าน แต่บน Linux ของ Vercel ไม่ผ่าน)
 - **เหตุผล:**
   - ถ้าลืมตั้ง `APP_ENV` ระบบจะไม่ mount static และไม่เปิด API docs
   - ถ้ารัน uvicorn จากโฟลเดอร์อื่น ก็ยังโหลด `.env.local` ได้
