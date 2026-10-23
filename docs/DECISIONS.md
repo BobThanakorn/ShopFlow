@@ -61,15 +61,15 @@
   - `fastapi` (ไม่ใช้ `[standard]`)
   - `uvicorn` อยู่ใน dev group
   - เพิ่ม `tzdata`
-  - test client ยังใช้ `httpx`
+  - test client ใช้ `httpx2` (dev only)
 - **เหตุผล:**
   - ไม่เอา CLI และ extras ที่ไม่ได้ใช้เข้า bundle
   - Vercel มี ASGI server ของตัวเอง (**ต้องตรวจตอน deploy ครั้งแรก**: ถ้า build log ฟ้องว่าขาด uvicorn ให้ย้ายไปเป็น dependency หลัก)
   - Windows และ image Linux แบบ slim ไม่มี tz database ทำให้ `ZoneInfo("Asia/Bangkok")` พัง (ทดสอบแล้วบนเครื่องพัฒนา) และ Phase 5 ต้องใช้คำนวณเวลาตาม `SHOP_TIMEZONE` อยู่แล้ว
-  - Starlette 1.x แนะนำให้ใช้ `httpx2` แทน แต่ยังรอเจ้าของโปรเจกต์อนุมัติ
+  - Starlette 1.x เตือนให้ใช้ `httpx2` แทน `httpx` สำหรับ `TestClient`
 - **หมายเหตุ:**
   - `tzdata` (ประมาณ 1.7 MB หลังติดตั้ง) ถูกเพิ่มเข้าไปก่อนแล้วค่อยแจ้งเจ้าของโปรเจกต์ เจ้าของโปรเจกต์อนุมัติย้อนหลังแล้วเมื่อ 2026-10-23
-  - เจ้าของโปรเจกต์อนุมัติ `httpx2` แล้ว แต่ระบบ permission ของ Claude Code บล็อกการติดตั้ง เจ้าของโปรเจกต์จะเปลี่ยนเอง
+  - เจ้าของโปรเจกต์อนุมัติ `httpx2` แล้ว แต่ระบบ permission ของ Claude Code บล็อกการติดตั้ง เจ้าของโปรเจกต์จึงเปลี่ยนเองเมื่อ 2026-10-23
 
 ## D-008 Ruff
 - **บริบท:** CLAUDE.md บังคับ type hints ใน `app/` และโปรเจกต์นี้เน้นเรื่อง security แต่ข้อความภาษาไทยทำให้บาง rule เตือนผิด และ ruff 0.17 จัดรูปแบบ code block ใน Markdown ด้วย
