@@ -3,10 +3,13 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.config import Settings
-from app.main import create_app
 
 
 def make_client(app_env: str) -> TestClient:
+    # Imported lazily: app.main builds `app` at import time from the real settings, which
+    # must happen after the autouse isolated_env fixture, not during test collection.
+    from app.main import create_app
+
     return TestClient(create_app(Settings(app_env=app_env)))
 
 
@@ -37,6 +40,8 @@ def test_api_docs_only_in_development() -> None:
 
 def test_production_errors_do_not_leak_stack_traces() -> None:
     # SPEC section 11: no stack traces returned to clients in production.
+    from app.main import create_app
+
     app = create_app(Settings(app_env="production"))
 
     @app.get("/api/_boom")
@@ -55,3 +60,4 @@ def test_vercel_entrypoint_exposes_module_level_app() -> None:
     from app import main
 
     assert isinstance(main.app, FastAPI)
+    assert TestClient(main.app).get("/api/health").status_code == 200
