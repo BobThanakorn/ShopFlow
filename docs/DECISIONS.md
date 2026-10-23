@@ -103,3 +103,10 @@
   - รันเครื่องมือด้วย `uv run python -m pytest` และ `uv run python -m uvicorn ...`
   - `ruff` เป็น binary ที่รันได้ตามปกติ
 - **เหตุผล:** ไม่ต้องลดระดับความปลอดภัยของเครื่อง และไม่มีผลกับ CI หรือ Vercel (Linux) คำสั่งใน CLAUDE.md ยังใช้ได้ตามเดิมบนเครื่องอื่น
+
+## D-012 `/api/health` ตอบ `HEAD` ด้วย
+*(ตัวเลือกที่ Claude พิจารณา ไม่ได้หารือกับเจ้าของ)*
+- **บริบท:** FastAPI ไม่สร้าง `HEAD` ให้อัตโนมัติ `HEAD /api/health` จึงได้ 405 ขณะที่ uptime monitor แบบฟรีบางตัวใช้ `HEAD` และนับ 405 ว่าเว็บล่ม
+- **ตัวเลือก:** (1) รองรับแค่ `GET` (2) `api_route(methods=["GET", "HEAD"])` (3) `@app.get` คู่กับ `@app.head(include_in_schema=False)`
+- **เลือก:** (3)
+- **เหตุผล:** (2) ทำให้ OpenAPI มี operation ID ซ้ำและ FastAPI เตือน ส่วน (3) ได้พฤติกรรมเดียวกันโดย schema ยังสะอาด

@@ -22,6 +22,10 @@ def test_health_returns_ok(app_env: str) -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_health_answers_head_for_uptime_monitors() -> None:
+    assert make_client("production").head("/api/health").status_code == 200
+
+
 def test_public_dir_served_in_development() -> None:
     response = make_client("development").get("/")
 
