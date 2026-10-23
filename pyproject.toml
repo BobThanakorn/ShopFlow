@@ -30,7 +30,7 @@ pythonpath = ["."]
 addopts = "-ra"
 
 [tool.ruff]
-target-version = "py313"
+# target-version is inferred from requires-python, so the version lives in one fewer place.
 line-length = 100
 # Ruff also formats code blocks inside Markdown; keep it off the spec/docs and AI tooling.
 extend-exclude = ["docs", ".agents", ".claude"]
