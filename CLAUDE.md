@@ -23,6 +23,7 @@ uv run uvicorn app.main:app --reload --port 3000   # รันบนเครื
 supabase db push                 # apply migrations (ถามเจ้าของก่อนทุกครั้ง)
 # Deploy: git push เท่านั้น (Vercel เชื่อมกับ GitHub อยู่แล้ว) ไม่ต้องใช้ Vercel CLI
 # Env: คัดลอก .env.example เป็น .env.local แล้วให้เจ้าของโปรเจกต์กรอกเอง
+# Windows ที่เปิด Smart App Control: ใช้ `uv run python -m pytest` / `uv run python -m uvicorn ...` (ดู docs/DECISIONS.md D-011)
 uv run python evals/run_eval.py --provider gemini --model <name> --delay 4
 ```
 

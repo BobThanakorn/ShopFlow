@@ -1,10 +1,17 @@
 """Application settings loaded from environment variables (and .env.local for local dev)."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import field_validator
+from pydantic import AnyHttpUrl, TypeAdapter, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+# Anchored to the repo root so `uvicorn` finds it from any working directory.
+ENV_FILE = Path(__file__).resolve().parent.parent / ".env.local"
+
+_HTTP_URL = TypeAdapter(AnyHttpUrl)
 
 
 class Settings(BaseSettings):
@@ -15,11 +22,14 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        # REVIEW: relative to the working directory. Fine for `uvicorn` run from the repo
-        # root; on Vercel the file does not exist and real env vars are used instead.
-        env_file=".env.local",
+        # REVIEW: .env.local is gitignored and deploys go through git, so Vercel never
+        # sees it and uses real env vars instead. Do not deploy from a local folder.
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_ignore_empty=True,
+        # REVIEW: a misspelled name (e.g. ADMIN_EMAIL) is silently dropped and the field
+        # keeps its default. For admin_emails that means nobody can log in, which fails
+        # closed, but check the spelling of every variable set on Vercel.
         extra="ignore",
     )
 
@@ -30,6 +40,14 @@ class Settings(BaseSettings):
     admin_emails: Annotated[list[str], NoDecode] = []
     shop_timezone: str = "Asia/Bangkok"
 
+    @field_validator("app_base_url")
+    @classmethod
+    def _validate_base_url(cls, value: str) -> str:
+        # REVIEW: only checks http(s) + host; paths, query strings and userinfo still pass.
+        _HTTP_URL.validate_python(value)
+        # Stored without a trailing slash so f"{base}/api/..." never yields "//".
+        return value.rstrip("/")
+
     @field_validator("admin_emails", mode="before")
     @classmethod
     def _split_admin_emails(cls, value: object) -> object:
@@ -39,6 +57,17 @@ class Settings(BaseSettings):
             value = value.split(",")
         if isinstance(value, list):
             return [str(email).strip().lower() for email in value if str(email).strip()]
+        return value
+
+    @field_validator("shop_timezone")
+    @classmethod
+    def _validate_timezone(cls, value: str) -> str:
+        # REVIEW: needs the tzdata package (Windows/slim Linux have no tz database); on Linux
+        # the system database is checked first, so accepted names may differ slightly.
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(f"unknown IANA timezone: {value!r}") from exc
         return value
 
     @property
